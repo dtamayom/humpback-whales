@@ -9,10 +9,10 @@ Authors: Catalina Botia, Daniela Tamayo and Isabella Ramos.
 
 ## Literature
 Kaggle contest GitHub repositories:
-a) [First place] (https://github.com/earhian/Humpback-Whale-Identification-1st-)
-b) [Second place] (https://github.com/SeuTao/Humpback-Whale-Identification-Challenge-2019_2nd_palce_solution)
-c) [Fourth place] (https://github.com/daustingm1/humpback-whale-4th-place)
-d) [Fifth place] (https://github.com/aaxwaz/Humpback-whale-identification-challenge)
+a) [First place](https://github.com/earhian/Humpback-Whale-Identification-1st-)
+b) [Second place](https://github.com/SeuTao/Humpback-Whale-Identification-Challenge-2019_2nd_palce_solution)
+c) [Fourth place](https://github.com/daustingm1/humpback-whale-4th-place)
+d) [Fifth place](https://github.com/aaxwaz/Humpback-whale-identification-challenge)
 
 
 ## Database
