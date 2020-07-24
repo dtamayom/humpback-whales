@@ -1,4 +1,5 @@
-#Dataloader
+#! /usr/bin/env python
+'Proyecto Ballenas jorobadas BCV train.py'
 import os
 import pandas  as pd
 from skimage import io, transform
