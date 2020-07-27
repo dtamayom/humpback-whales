@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 'Proyecto Ballenas jorobadas BCV train.py'
 import os
+import cv2
 import pandas  as pd
 from skimage import io, transform
 import torch
@@ -12,7 +13,7 @@ def Correction(path_img, path_label):
     label= pd.read_csv(path_label)
     label=label[label.Id != 'new_whale']
     count=label.groupby('Id').size()
-    count=count[count>=10]
+    count=count[count>=4]
     dict_count=count.to_dict()
     dict_train=dict(zip(list(label.Image), list(label.Id)))
     dict_final={}
@@ -23,8 +24,56 @@ def Correction(path_img, path_label):
     dict_train={}
     dict_val={}
     dict_test={}
+    #Carpetas
+    if not os.path.exists("../data/HumpbackWhales/val_final"):
+        os.mkdir("../data/HumpbackWhales/val_final")
+    if not os.path.exists("../data/HumpbackWhales/test_final"):
+        os.mkdir("../data/HumpbackWhales/test_final")
+    if not os.path.exists("../data/HumpbackWhales/train_final"):
+        os.mkdir("../data/HumpbackWhales/train_final")
 
-    return dict_final
+    for ima in dict_final:
+          ids = dict_final[ima]
+          if not ids == "listo":
+            test_con = 0
+            val_con = 0
+            max_test = dict_count[ids]*0.1
+            max_val = dict_count[ids]*0.1
+            for im in dict_final:
+                  if ids == dict_final[im]:
+                        if test_con < max_test:
+                              dict_test[im] =ids
+                              dict_final[im] = "listo"
+                              test_con += 1
+                              imagen = cv2.imread(path_img + im, 1)
+                              cv2.imwrite("../data/HumpbackWhales/test_final/" + im, imagen)
+                        elif val_con < max_val:
+                              dict_val[im] =ids
+                              dict_final[im] = "listo"
+                              val_con += 1
+                              imagen = cv2.imread(path_img + im, 1)
+                              cv2.imwrite("../data/HumpbackWhales/val_final/" + im, imagen)
+                        else:
+                              dict_train[im] =ids
+                              dict_final[im] = "listo" 
+                              imagen = cv2.imread(path_img + im, 1)
+                              cv2.imwrite("../data/HumpbackWhales/train_final/" + im, imagen) 
+    w1 = csv.writer(open("train_final.csv", "w"))
+    for img, att in dict_train.items():
+            w1.writerow([img, att])
+    w2 = csv.writer(open("test_final.csv", "w"))
+    for img, att in dict_test.items():
+            w2.writerow([img, att])
+    w3 = csv.writer(open("val_final.csv", "w"))
+    for img, att in dict_val.items():
+            w3.writerow([img, att])
+    return dict_final, dict_test, dict_val, dict_train
+
+f, g, h, j = Correction("../data/HumpbackWhales/train/", "../data/HumpbackWhales/train.csv")
+print(len(f))
+print(len(g))
+print(len(h))
+print(len(j))
 
 # Dataset class
 class DatasetJorobadas(Dataset):
@@ -41,7 +90,7 @@ class DatasetJorobadas(Dataset):
         'Denotes the total number of samples'
         return len(self.image)
 
-  def __getitem__(self, index)
+  def __getitem__(self, index):
         'Generates one sample of data'
         ID = self.image[index]
         # Load data and get attributes
