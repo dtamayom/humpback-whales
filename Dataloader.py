@@ -41,7 +41,7 @@ class DatasetJorobadas(Dataset):
         'Denotes the total number of samples'
         return len(self.image)
 
-  def __getitem__(self, index):
+  def __getitem__(self, index)
         'Generates one sample of data'
         ID = self.image[index]
         # Load data and get attributes
