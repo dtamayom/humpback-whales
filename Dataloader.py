@@ -81,14 +81,14 @@ class DatasetJorobadas(Dataset):
   def __init__(self, image, label, data_path, transform=transforms.ToTensor()):
         super(DatasetJorobadas, self).__init__()
         'Initialization'
-        self.image = image        #lista de las imagenes de cada particion
+        self.image = image        #lista de la carpeta de las imagenes de cada particion
         self.label = label      #diccionario de imagenes y anotacion (train,val o test)
-        self.data_path = data_path        #'../data/HumpbackWhales'
+        self.data_path = data_path        #'../data/HumpbackWhales/'
         self.transform = transform        
 
   def __len__(self):
         'Denotes the total number of samples'
-        return len(self.image)
+        return len(self.image) 
 
   def __getitem__(self, index):
         'Generates one sample of data'
