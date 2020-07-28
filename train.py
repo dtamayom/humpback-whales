@@ -70,6 +70,7 @@ with open('test_final.csv', mode='r') as file3:
     test = {rows[0]:rows[1] for rows in reader}
 test_im=os.listdir('../data/HumpbackWhales/test_final/')
 
+breakpoint()
 path= '../data/HumpbackWhales/'
 
 train_loader = torch.utils.data.DataLoader(DatasetJorobadas(train_im, train, '../data/HumpbackWhales/train_final/')
