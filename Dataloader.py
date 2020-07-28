@@ -69,16 +69,16 @@ def Correction(path_img, path_label):
             w3.writerow([img, att])
     return dict_final, dict_test, dict_val, dict_train
 
-f, g, h, j = Correction("../data/HumpbackWhales/train/", "../data/HumpbackWhales/train.csv")
-print(len(f))
-print(len(g))
-print(len(h))
-print(len(j))
+#f, g, h, j = Correction("../data/HumpbackWhales/train/", "../data/HumpbackWhales/train.csv")
+#print(len(f))
+#print(len(g))
+#print(len(h))
+#print(len(j))
 
 # Dataset class
 class DatasetJorobadas(Dataset):
   'Caracteriza dataset para PyTorch'
-  def __init__(self, image, label, data_path, transform=transforms.ToTensor()):
+  def __init__(self, image, label, data_path, transform=None):
         super(DatasetJorobadas, self).__init__()
         'Initialization'
         self.image = image        #lista de la carpeta de las imagenes de cada particion

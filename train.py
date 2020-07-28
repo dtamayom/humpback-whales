@@ -17,6 +17,8 @@ import csv
 import os
 from densenet import DenseNet
 
+RESNET_18 = 'https://download.pytorch.org/models/resnet18-5c106cde.pth'
+
 #argumentos
 parser = argparse.ArgumentParser(description='CNN Whales')
 parser.add_argument('--batch-size', type=int, default=32, metavar='N',
@@ -70,14 +72,14 @@ test_im=os.listdir('../data/HumpbackWhales/test_final/')
 
 path= '../data/HumpbackWhales/'
 
-train_loader = torch.utils.data.DataLoader(DatasetJorobadas(train_im, train, '../data/HumpbackWhales/train_final/'), 
-                  batch_size=args.batch_size, shuffle=True, **kwargs)
+train_loader = torch.utils.data.DataLoader(DatasetJorobadas(train_im, train, '../data/HumpbackWhales/train_final/')
+                  ,batch_size=args.batch_size, shuffle=True, **kwargs)
 
 
 val_loader = torch.utils.data.DataLoader(DatasetJorobadas(val_im, val, '../data/HumpbackWhales/val_final/'), 
                   batch_size=args.batch_size, shuffle=True, **kwargs)
 
-model = DenseNet(num_classes=numwhales)
+model = models.resnet18(num_classes=numwhales)
 
 if args.cuda:
     model.cuda()
