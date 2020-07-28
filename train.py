@@ -5,21 +5,23 @@ import argparse
 import os.path as osp
 import torch
 import torch.optim as optim
+from tqdm import tqdm
 import torch.nn.functional as F
 from torch.autograd import Variable
-from torchvision import datasets, transforms
+from torchvision import datasets, transforms, models
 #from architecture import Net
 from Dataloader import DatasetJorobadas
 import torch.nn as nn
 import numpy as np
 import csv
 import os
+from densenet import DenseNet
 
 #argumentos
 parser = argparse.ArgumentParser(description='CNN Whales')
 parser.add_argument('--batch-size', type=int, default=32, metavar='N',
                     help='input batch size for training (default: 64)')
-parser.add_argument('--test-batch-size', type=int, default=1000, metavar='N',
+parser.add_argument('--test-batch-size', type=int, default=500, metavar='N',
                     help='input batch size for testing (default: 1000)')
 parser.add_argument('--epochs', type=int, default=10, metavar='N',
                     help='number of epochs to train (default: 10)')
@@ -39,6 +41,7 @@ parser.add_argument('--log-interval', type=int, default=10, metavar='N',
 parser.add_argument('--save', type=str, default='model.pt',
                     help='file on which to save model weights')
 
+numwhales = 1078
 
 args = parser.parse_args()
 args.cuda = not args.no_cuda and torch.cuda.is_available()
@@ -53,28 +56,28 @@ kwargs = {'num_workers': 1, 'pin_memory': True} if args.cuda else {}
 with open('train_final.csv', mode='r') as file1:
     reader = csv.reader(file1)
     train = {rows[0]:rows[1] for rows in reader}
-train_im=os.listdir('../data/HumpbackWhales/train_final')
+train_im=os.listdir('../data/HumpbackWhales/train_final/')
 
 with open('val_final.csv', mode='r') as file2:
     reader = csv.reader(file2)
     val = {rows[0]:rows[1] for rows in reader}
-val_im=os.listdir('../data/HumpbackWhales/val_final')
+val_im=os.listdir('../data/HumpbackWhales/val_final/')
 
 with open('test_final.csv', mode='r') as file3:
     reader = csv.reader(file3)
     test = {rows[0]:rows[1] for rows in reader}
-test_im=os.listdir('../data/HumpbackWhales/test_final')
+test_im=os.listdir('../data/HumpbackWhales/test_final/')
 
 path= '../data/HumpbackWhales/'
 
-train_loader = torch.utils.data.DataLoader(DatasetJorobadas(train_im, train, '../data/HumpbackWhales/train_final'), 
+train_loader = torch.utils.data.DataLoader(DatasetJorobadas(train_im, train, '../data/HumpbackWhales/train_final/'), 
                   batch_size=args.batch_size, shuffle=True, **kwargs)
 
 
-val_loader = torch.utils.data.DataLoader(DatasetJorobadas(val_im, val, '../data/HumpbackWhales/val_final'), 
+val_loader = torch.utils.data.DataLoader(DatasetJorobadas(val_im, val, '../data/HumpbackWhales/val_final/'), 
                   batch_size=args.batch_size, shuffle=True, **kwargs)
 
-model = Net()
+model = DenseNet(num_classes=numwhales)
 
 if args.cuda:
     model.cuda()
@@ -91,6 +94,7 @@ optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum)
 def Train(epoch):
     model.train()
     for batch_idx, (data, target) in enumerate(train_loader):
+        torch.tensor(target)
         if args.cuda:
             data, target = data.cuda(), target.cuda()
         data, target = Variable(data), Variable(target)

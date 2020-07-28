@@ -96,6 +96,7 @@ class DatasetJorobadas(Dataset):
         # Load data and get attributes
         label = self.label[ID]
         image = io.imread(self.data_path + ID)
+        image = transform.resize(image,(224,224))
         if self.transform:
             image = self.transform(image)
         return image, label
