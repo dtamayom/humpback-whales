@@ -104,7 +104,8 @@ def Train(epoch):
         data, target = Variable(data.float()), Variable(target)
         optimizer.zero_grad()
         output = model(data)
-        loss = F.nll_loss(output, target)
+        output=output[:,batch_idx]
+        loss = F.binary_cross_entropy_with_logits(output, target.float())
         loss.backward()
         optimizer.step()
         if batch_idx % args.log_interval == 0:
@@ -121,8 +122,9 @@ def Validation(epoch):
             data, target = data.cuda(), target.cuda()
         data, target = Variable(data), Variable(target)
         output = model(data)
+        output=output[:,batch_idx]
         # get the index of the max log-probability
-        val_loss += F.nll_loss(output, target).data.item()
+        val_loss += F.binary_cross_entropy_with_logits(output, target.float()).data.item()
         # get the index of the max log-probability
         pred = output.data.max(1)[1]
         correct += pred.eq(target.data).cpu().sum()
