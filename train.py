@@ -21,9 +21,9 @@ RESNET_18 = 'https://download.pytorch.org/models/resnet18-5c106cde.pth'
 
 #argumentos
 parser = argparse.ArgumentParser(description='CNN Whales')
-parser.add_argument('--batch-size', type=int, default=32, metavar='N',
+parser.add_argument('--batch-size', type=int, default=10, metavar='N',
                     help='input batch size for training (default: 64)')
-parser.add_argument('--test-batch-size', type=int, default=500, metavar='N',
+parser.add_argument('--test-batch-size', type=int, default=100, metavar='N',
                     help='input batch size for testing (default: 1000)')
 parser.add_argument('--epochs', type=int, default=10, metavar='N',
                     help='number of epochs to train (default: 10)')
@@ -70,7 +70,6 @@ with open('test_final.csv', mode='r') as file3:
     test = {rows[0]:rows[1] for rows in reader}
 test_im=os.listdir('../data/HumpbackWhales/test_final/')
 
-breakpoint()
 path= '../data/HumpbackWhales/'
 
 train_loader = torch.utils.data.DataLoader(DatasetJorobadas(train_im, train, '../data/HumpbackWhales/train_final/')
@@ -97,10 +96,12 @@ optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum)
 def Train(epoch):
     model.train()
     for batch_idx, (data, target) in enumerate(train_loader):
-        torch.tensor(target)
+        target=list(map(int,target))
+        target=torch.tensor(target)
+        target=target.long()
         if args.cuda:
             data, target = data.cuda(), target.cuda()
-        data, target = Variable(data), Variable(target)
+        data, target = Variable(data.float()), Variable(target)
         optimizer.zero_grad()
         output = model(data)
         loss = F.nll_loss(output, target)
