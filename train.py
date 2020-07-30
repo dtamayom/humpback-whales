@@ -171,6 +171,7 @@ def Train(epoch):
 def Validation(epoch):
     with torch.no_grad():
         val_loss=0.0
+        val_acc=0.0
         # Set to evaluation mode
         model.eval()
         # Validation loop
@@ -182,7 +183,6 @@ def Validation(epoch):
             if args.cuda:
                 data, target = data.cuda(), target.cuda()
             data, target = Variable(data), Variable(target)
-            breakpoint()
             # Forward pass
             output = model(data.float())
             # Validation loss
@@ -191,7 +191,8 @@ def Validation(epoch):
             val_loss += loss.item() * data.size(0)
             # Calculate validation accuracy
             _, pred = torch.max(output, dim=1)
-            correct_tensor = pred.eq(target.data.view_as(pred).type(torch.FloatTensor))
+            pred = pred.cuda()
+            correct_tensor = pred.eq(target.data.view_as(pred))
             accuracy = torch.mean(correct_tensor.type(torch.FloatTensor))
             # Multiply average accuracy times the number of examples
             val_acc += accuracy.item() * data.size(0)
