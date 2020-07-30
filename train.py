@@ -21,7 +21,7 @@ RESNET_18 = 'https://download.pytorch.org/models/resnet18-5c106cde.pth'
 
 #argumentos
 parser = argparse.ArgumentParser(description='CNN Whales')
-parser.add_argument('--batch-size', type=int, default=10, metavar='N',
+parser.add_argument('--batch-size', type=int, default=100, metavar='N',
                     help='input batch size for training (default: 64)')
 parser.add_argument('--test-batch-size', type=int, default=100, metavar='N',
                     help='input batch size for testing (default: 1000)')
@@ -79,7 +79,15 @@ train_loader = torch.utils.data.DataLoader(DatasetJorobadas(train_im, train, '..
 val_loader = torch.utils.data.DataLoader(DatasetJorobadas(val_im, val, '../data/HumpbackWhales/val_final/'), 
                   batch_size=args.batch_size, shuffle=True, **kwargs)
 
-model = models.resnet18(num_classes=numwhales)
+model = models.resnet18(pretrained=True)
+
+for param in model.parameters():
+    param.requires_grad = False
+
+n_inputs =model.fc.in_features
+model.fc = nn.Sequential(nn.Linear(n_inputs,numwhales),
+                         nn.ReLU(),
+                         nn.LogSoftmax(dim=1))
 
 if args.cuda:
     model.cuda()
@@ -91,7 +99,8 @@ if osp.exists(args.save):
         model.load_state_dict(state)
         load_model = True
 
-optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum)
+optimizer = optim.Adam(model.parameters())
+criterion= nn.NLLLoss()
 
 def Train(epoch):
     model.train()
@@ -104,38 +113,98 @@ def Train(epoch):
         data, target = Variable(data.float()), Variable(target)
         optimizer.zero_grad()
         output = model(data)
-        output=output[:,batch_idx]
-        loss = F.binary_cross_entropy_with_logits(output, target.float())
+        loss = criterion(output, target)
         loss.backward()
         optimizer.step()
+
+
+
+
+        # train_loss += loss.item() * data.size(0)
+
+        # # Calculate accuracy by finding max log probability
+        # _, pred = torch.max(output, dim=1)
+        # correct_tensor = pred.eq(target.data.view_as(pred))
+        # # Need to convert correct tensor from int to float to average
+        # accuracy = torch.mean(correct_tensor.type(torch.FloatTensor))
+        # # Multiply average accuracy times the number of examples in batch
+        # train_acc += accuracy.item() * data.size(0)
+
         if batch_idx % args.log_interval == 0:
             print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
                 epoch, batch_idx * len(data), len(train_loader.dataset),
                 100. * batch_idx / len(train_loader), loss.data.item()))
 
 
-def Validation(epoch):
-    model.eval()
-    val_loss = 0
-    for data, target in val_loader:
-        if args.cuda:
-            data, target = data.cuda(), target.cuda()
-        data, target = Variable(data), Variable(target)
-        output = model(data)
-        output=output[:,batch_idx]
-        # get the index of the max log-probability
-        val_loss += F.binary_cross_entropy_with_logits(output, target.float()).data.item()
-        # get the index of the max log-probability
-        pred = output.data.max(1)[1]
-        correct += pred.eq(target.data).cpu().sum()
-        val_loss = val_loss
-        # loss function already averages over batch size
-        val_loss /= len(val_loader)
-        acccuracy = 100. * correct / len(val_loader.dataset)
-        print('\nval set: Average loss: {:.4f}, '
-          'Accuracy: {}/{} ({:.0f}%)\n'.format(val_loss, correct, len(val_loader.dataset), acccuracy))
-    return val_loss
+# def Validation(epoch):
+#     model.eval()
+#     val_loss = 0
+#     for data, target in val_loader:
+#         target=list(map(int,target))
+#         target=torch.tensor(target)
+#         target=target.long()
+#         if args.cuda:
+#             data, target = data.cuda(), target.cuda()
+#         data, target = Variable(data), Variable(target)
+#         output = model(data)
+#         loss = criterion(output,target)
+#         # get the index of the max log-probability
+#         val_loss += loss.item() * data.size(0)
+#         # get the index of the max log-probability
+#         #pred = output.data.max(1)[1]
+#         _, pred = torch.max(output, dim=1)
+#         correct_tensor = pred.eq(target.data.view_as(pred))
+#         #correct += pred.eq(target.data).cpu().sum()
+#         #val_loss = val_loss
+#         # loss function already averages over batch size
+#         #val_loss /= len(val_loader)
+#         #acccuracy = 100. * correct / len(val_loader.dataset)
+#         accuracy = torch.mean(correct_tensor.type(torch.FloatTensor))
+#         val_acc += accuracy.item() * data.size(0)
+#     val_loss = val_loss / len(val_loader.dataset)
+#     val_acc = val_acc / len(val_loader.dataset)
+#         print('\nval set: Average loss: {:.4f}, '
+#           'Accuracy: {}/{} ({:.0f}%)\n'.format(val_loss, correct, len(val_loader.dataset), acccuracy))
+    
+#     return val_loss
 
+def Validation(epoch):
+    breakpoint()
+    with torch.no_grad():
+        val_loss=0.0
+        # Set to evaluation mode
+        model.eval()
+        # Validation loop
+        for data, target in val_loader:
+            target=list(map(int,target))
+            target=torch.tensor(target)
+            target=target.long()
+            if args.cuda:
+                data, target = data.cuda(), target.cuda()
+            data, target = Variable(data), Variable(target)
+            # Forward pass
+            output = model(data)
+            # Validation loss
+            loss = criterion(output.float(), target)
+            # Multiply average loss times the number of examples in batch
+            val_loss += loss.item().float() * data.size(0).float()
+            # Calculate validation accuracy
+            _, pred = torch.max(output, dim=1)
+            correct_tensor = pred.eq(target.data.view_as(pred).type(torch.FloatTensor))
+            accuracy = torch.mean(correct_tensor.type(torch.FloatTensor))
+            # Multiply average accuracy times the number of examples
+            val_acc += accuracy.item() * data.size(0)
+
+        # Calculate average losses
+        val_loss = val_loss / len(val_loader.dataset)
+
+        # Calculate average accuracy
+        val_acc = val_acc / len(val_loader.dataset)
+
+        print(f'\nEpoch: {epoch} \tValidation Loss: {val_loss:.4f}')
+        print(f'\t\t Validation Accuracy: {100 * val_acc:.2f}%')
+    
+    return(val_loss)
 
 def adjust_learning_rate(optimizer, gamma, step):
     """Sets the learning rate to the initial LR decayed

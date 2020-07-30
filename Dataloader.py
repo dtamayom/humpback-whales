@@ -32,7 +32,7 @@ def Correction(path_img, path_label):
         os.mkdir("../data/HumpbackWhales/test_final")
     if not os.path.exists("../data/HumpbackWhales/train_final"):
         os.mkdir("../data/HumpbackWhales/train_final")
-    iter=0
+    iter=-1
     for ima in dict_final:
           ids = dict_final[ima]
           if not ids == "listo":
