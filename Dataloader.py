@@ -13,7 +13,7 @@ def Correction(path_img, path_label):
     label= pd.read_csv(path_label)
     label=label[label.Id != 'new_whale']
     count=label.groupby('Id').size()
-    count=count[count>=4]
+    count=count[count>=10]
     dict_count=count.to_dict()
     dict_train=dict(zip(list(label.Image), list(label.Id)))
     dict_final={}
@@ -86,7 +86,10 @@ def Correction(path_img, path_label):
 # Dataset class
 class DatasetJorobadas(Dataset):
   'Caracteriza dataset para PyTorch'
-  def __init__(self, image, label, data_path, transform=transforms.ToTensor()):
+  def __init__(self, image, label, data_path, transform=transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))
+    ])):
         super(DatasetJorobadas, self).__init__()
         'Initialization'
         self.image = image        #lista de la carpeta de las imagenes de cada particion
