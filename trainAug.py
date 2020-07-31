@@ -40,7 +40,7 @@ parser.add_argument('--seed', type=int, default=1, metavar='S',
 parser.add_argument('--log-interval', type=int, default=10, metavar='N',
                     help='how many batches to wait before '
                          'logging training status')
-parser.add_argument('--save', type=str, default='mejor20epochs.pt',
+parser.add_argument('--save', type=str, default='augmented.pt',
                     help='file on which to save model weights')
 
 numwhales = 273
@@ -72,12 +72,35 @@ test_im=os.listdir('../data/HumpbackWhales/test_final/')
 
 path= '../data/HumpbackWhales/'
 
-train_loader = torch.utils.data.DataLoader(DatasetJorobadas(train_im, train, '../data/HumpbackWhales/train_final/')
-                  ,batch_size=args.batch_size, shuffle=True, **kwargs)
+##DATA AUGMENTATION
+# Image transformations
+image_transforms = {
+    # Train uses data augmentation
+    'train':
+    transforms.Compose([
+        transforms.RandomResizedCrop(size=226, scale=(0.8, 1.0)),
+        transforms.RandomRotation(degrees=15),
+        transforms.ColorJitter(),
+        transforms.CenterCrop(size=224),  # Image net standards
+        transforms.ToTensor(),
+        transforms.Normalize((0.485, 0.456, 0.406),
+                             (0.229, 0.224, 0.225))  # Imagenet standards
+    ]),
+    # Validation does not use augmentation
+    'val':
+    transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Normalize((0.485, 0.456, 0.406), 
+                             (0.229, 0.224, 0.225))
+    ]),
+}
+
+train_loader = torch.utils.data.DataLoader(DatasetJorobadas(train_im, train, '../data/HumpbackWhales/train_final/',
+                  image_transforms['train']),batch_size=args.batch_size, shuffle=True, **kwargs)
 
 
-val_loader = torch.utils.data.DataLoader(DatasetJorobadas(val_im, val, '../data/HumpbackWhales/val_final/'), 
-                  batch_size=args.batch_size, shuffle=True, **kwargs)
+val_loader = torch.utils.data.DataLoader(DatasetJorobadas(val_im, val, '../data/HumpbackWhales/val_final/', 
+                  image_transforms['val']),batch_size=args.batch_size, shuffle=True, **kwargs)
 
 model = models.resnet18(pretrained=True)
 

@@ -8,6 +8,7 @@ import torch
 from torch.utils.data import Dataset
 from torchvision import transforms
 import csv
+from PIL import Image
 
 def Correction(path_img, path_label):
     label= pd.read_csv(path_label)
@@ -86,16 +87,14 @@ def Correction(path_img, path_label):
 # Dataset class
 class DatasetJorobadas(Dataset):
   'Caracteriza dataset para PyTorch'
-  def __init__(self, image, label, data_path, transform=transforms.Compose([
-        transforms.ToTensor(),
-        transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))
-    ])):
+  def __init__(self, image, label, data_path, transform):
         super(DatasetJorobadas, self).__init__()
         'Initialization'
         self.image = image        #lista de la carpeta de las imagenes de cada particion
         self.label = label      #diccionario de imagenes y anotacion (train,val o test)
         self.data_path = data_path        #'../data/HumpbackWhales/'
-        self.transform = transform        
+        self.transform = transform
+        self.resize = transforms.Resize(size=(224,224))       
 
   def __len__(self):
         'Denotes the total number of samples'
@@ -107,7 +106,12 @@ class DatasetJorobadas(Dataset):
         # Load data and get attributes
         label = self.label[im]
         image = io.imread(self.data_path + im)
-        image = transform.resize(image,(224,224))
+        #image = transform.resize(image,(224,224))
+        image=Image.fromarray(image)
+        image = self.resize(image)
+        #image=Image.fromarray(image)
+        #print(image.shape())
         if self.transform:
             image = self.transform(image)
+        
         return image, label
