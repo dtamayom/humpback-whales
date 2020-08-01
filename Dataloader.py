@@ -14,7 +14,7 @@ def Correction(path_img, path_label):
     label= pd.read_csv(path_label)
     label=label[label.Id != 'new_whale']
     count=label.groupby('Id').size()
-    count=count[count>=10]
+    count=count[count>=20]
     dict_count=count.to_dict()
     dict_train=dict(zip(list(label.Image), list(label.Id)))
     dict_final={}
@@ -41,8 +41,8 @@ def Correction(path_img, path_label):
             print(iter)
             test_con = 0
             val_con = 0
-            max_test = dict_count[ids]*0.1
-            max_val = dict_count[ids]*0.1
+            max_test = dict_count[ids]*0.25
+            max_val = dict_count[ids]*0.25
             for im in dict_final:
                   if ids == dict_final[im]:
                         if test_con < max_test:
@@ -80,9 +80,9 @@ def Correction(path_img, path_label):
 
 #f, g, h, j = Correction("../data/HumpbackWhales/train/", "../data/HumpbackWhales/train.csv")
 #print(len(f))
-#print(len(g))
-#print(len(h))
-#print(len(j))
+#print('En test', len(g))
+#print('En val', len(h))
+print('En train', len(j))
 
 # Dataset class
 class DatasetJorobadas(Dataset):
