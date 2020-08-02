@@ -199,6 +199,9 @@ def Validation(epoch):
     with torch.no_grad():
         val_loss=0.0
         val_acc=0.0
+        precision=[]
+        recall=[]
+        fbeta=[]
         # Set to evaluation mode
         model.eval()
         # Validation loop
@@ -222,29 +225,32 @@ def Validation(epoch):
             _, pred = torch.max(output, dim=1)
             pred = pred.cuda()
             correct_tensor = pred.eq(target.data.view_as(pred))
-            #accuracy = torch.mean(correct_tensor.type(torch.FloatTensor))
+            accuracy = torch.mean(correct_tensor.type(torch.FloatTensor))
             # Multiply average accuracy times the number of examples
-            #val_acc += accuracy.item() * data.size(0)
+            val_acc += accuracy.item() * data.size(0)
+            #Calculate metrics
+            target=target.cpu().numpy()
+            pred=pred.cpu().numpy()
+            pre, rec, f, _= metrics.precision_recall_fscore_support(target, pred, average='weighted')
+            precision.append(pre)
+            recall.append(rec)
+            fbeta.append(f)
 
         # Calculate average losses
         val_loss = val_loss / len(val_loader.dataset)
 
         # Calculate average accuracy
-        #val_acc = val_acc / len(val_loader.dataset)
-        
-        #Calculate metrics
-        # target=target.cpu().numpy()
-        # pred=pred.cpu().numpy()
-        # proba=proba.cpu().numpy()
-        # val_acc=metrics.accuracy_score(target, pred)
-        # precision, recall, fbeta, support= metrics.precision_recall_fscore_support(target, pred, average='weighted')
+        val_acc = val_acc / len(val_loader.dataset)
 
-        # print(f'\nEpoch: {epoch} \tValidation Loss: {val_loss:.4f}')
-        # print(f'\t\t Validation Accuracy: {100 * val_acc:.2f}%')
-        # print(f'Validation Precision: {100*precision:.2f}%')
-        # print(f'Validation Recall: {100*recall:.2f}%')
-        # print(f'Validation Fbeta: {100*fbeta:.2f}%')
-        # print(f'Validation Support: {support}')
+        val_precision = sum(precision)/len(precision)
+        val_recall= sum(recall)/len(recall)
+        val_fbeta= sum(fbeta)/len(fbeta)
+
+        print(f'\nEpoch: {epoch} \tValidation Loss: {val_loss:.4f}')
+        print(f'\t\t Validation Accuracy: {100 * val_acc:.2f}%')
+        print(f'Validation avg Precision: {100*val_precision:.2f}%')
+        print(f'Validation avg Recall: {100*val_recall:.2f}%')
+        print(f'Validation avg Fbeta: {100*val_fbeta:.2f}%')
 
         precision = dict()
         recall = dict()
