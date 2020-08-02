@@ -15,7 +15,6 @@ import torch.nn as nn
 import numpy as np
 import csv
 import os
-from densenet import DenseNet
 import sklearn.metrics as metrics
 
 RESNET_18 = 'https://download.pytorch.org/models/resnet18-5c106cde.pth'
@@ -172,6 +171,8 @@ def Validation(epoch):
             data, target = Variable(data), Variable(target)
             # Forward pass
             output = model(data.float())
+            sig=nn.Sigmoid()
+            proba = sig(output)
             # Validation loss
             loss = criterion(output.float(), target)
             # Multiply average loss times the number of examples in batch
@@ -190,9 +191,9 @@ def Validation(epoch):
         # Calculate average accuracy
         #val_acc = val_acc / len(val_loader.dataset)
 
-        for i in target:
-            precision, recall, fbeta, support= metrics.precision_recall_fscore_support(target, pred, average='binary', pos_label=i)
-            curve=metrics.precision_recall_curve(target, pred)
+        #for i in target:
+        #    precision, recall, fbeta, support= metrics.precision_recall_fscore_support(target, pred, average='binary', pos_label=i)
+        #    curve=metrics.precision_recall_curve(target, proba)
         
         #Calculate metrics
         target=target.cpu().numpy()
