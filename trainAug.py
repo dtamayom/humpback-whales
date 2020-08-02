@@ -16,6 +16,7 @@ import numpy as np
 import csv
 import os
 from densenet import DenseNet
+import sklearn.metrics as metrics
 
 RESNET_18 = 'https://download.pytorch.org/models/resnet18-5c106cde.pth'
 
@@ -25,7 +26,7 @@ parser.add_argument('--batch-size', type=int, default=64, metavar='N',
                     help='input batch size for training (default: 64)')
 parser.add_argument('--test-batch-size', type=int, default=100, metavar='N',
                     help='input batch size for testing (default: 1000)')
-parser.add_argument('--epochs', type=int, default=20, metavar='N',
+parser.add_argument('--epochs', type=int, default=15, metavar='N',
                     help='number of epochs to train (default: 10)')
 parser.add_argument('--lr', type=float, default=0.01, metavar='LR',
                     help='learning rate (default: 0.01)')
@@ -40,10 +41,10 @@ parser.add_argument('--seed', type=int, default=1, metavar='S',
 parser.add_argument('--log-interval', type=int, default=10, metavar='N',
                     help='how many batches to wait before '
                          'logging training status')
-parser.add_argument('--save', type=str, default='augmented.pt',
+parser.add_argument('--save', type=str, default='augmented2.pt',
                     help='file on which to save model weights')
 
-numwhales = 273
+numwhales = 66
 
 args = parser.parse_args()
 args.cuda = not args.no_cuda and torch.cuda.is_available()
@@ -102,14 +103,18 @@ train_loader = torch.utils.data.DataLoader(DatasetJorobadas(train_im, train, '..
 val_loader = torch.utils.data.DataLoader(DatasetJorobadas(val_im, val, '../data/HumpbackWhales/val_final/', 
                   image_transforms['val']),batch_size=args.batch_size, shuffle=True, **kwargs)
 
-model = models.resnet18(pretrained=True)
+model = models.vgg16(pretrained=True)
 
 for param in model.parameters():
     param.requires_grad = False
 
-n_inputs =model.fc.in_features
-model.fc = nn.Sequential(nn.Linear(n_inputs,numwhales),
-                         nn.ReLU(),
+model.classifier = nn.Sequential(nn.Linear(25088,4096, bias=True),
+                         nn.ReLU(inplace=True),
+                         nn.Dropout(p=0.5, inplace=False),
+                         nn.Linear(4096,4096, bias=True),
+                         nn.ReLU(inplace=True),
+                         nn.Dropout(p=0.5, inplace=False),
+                         nn.Linear(in_features=4096, out_features=numwhales, bias=True),
                          nn.LogSoftmax(dim=1))
 
 if args.cuda:
@@ -122,7 +127,8 @@ if osp.exists(args.save):
         model.load_state_dict(state)
         load_model = True
 
-optimizer = optim.Adam(model.parameters())
+#optimizer = optim.Adam(model.parameters())
+optimizer = optim.Adam(model.parameters(), lr= 3e-4, betas=(0.9, 0.99), weight_decay=0.0002)
 criterion= nn.NLLLoss()
 
 def Train(epoch):
@@ -174,19 +180,33 @@ def Validation(epoch):
             _, pred = torch.max(output, dim=1)
             pred = pred.cuda()
             correct_tensor = pred.eq(target.data.view_as(pred))
-            accuracy = torch.mean(correct_tensor.type(torch.FloatTensor))
+            #accuracy = torch.mean(correct_tensor.type(torch.FloatTensor))
             # Multiply average accuracy times the number of examples
-            val_acc += accuracy.item() * data.size(0)
+            #val_acc += accuracy.item() * data.size(0)
 
         # Calculate average losses
         val_loss = val_loss / len(val_loader.dataset)
 
         # Calculate average accuracy
-        val_acc = val_acc / len(val_loader.dataset)
+        #val_acc = val_acc / len(val_loader.dataset)
+
+        for i in target:
+            precision, recall, fbeta, support= metrics.precision_recall_fscore_support(target, pred, average='binary', pos_label=i)
+            curve=metrics.precision_recall_curve(target, pred)
+        
+        #Calculate metrics
+        target=target.cpu().numpy()
+        pred=pred.cpu().numpy()
+        val_acc=metrics.accuracy_score(target, pred)
+        precision, recall, fbeta, support= metrics.precision_recall_fscore_support(target, pred, average='weighted')
 
         print(f'\nEpoch: {epoch} \tValidation Loss: {val_loss:.4f}')
         print(f'\t\t Validation Accuracy: {100 * val_acc:.2f}%')
-    
+        print(f'Validation Precision: {100*precision:.2f}%')
+        print(f'Validation Recall: {100*recall:.2f}%')
+        print(f'Validation Fbeta: {100*fbeta:.2f}%')
+        print(f'Validation Support: {support}')
+
     return(val_loss)
 
 def adjust_learning_rate(optimizer, gamma, step):
