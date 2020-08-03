@@ -22,13 +22,11 @@ from sklearn.metrics import precision_recall_curve
 from sklearn.metrics import average_precision_score
 from sklearn.preprocessing import label_binarize
 
-RESNET_18 = 'https://download.pytorch.org/models/resnet18-5c106cde.pth'
-
 #argumentos
 parser = argparse.ArgumentParser(description='CNN Whales')
-parser.add_argument('--batch-size', type=int, default=64, metavar='N',
+parser.add_argument('--batch-size', type=int, default=32, metavar='N',
                     help='input batch size for training (default: 64)')
-parser.add_argument('--test-batch-size', type=int, default=100, metavar='N',
+parser.add_argument('--test-batch-size', type=int, default=32, metavar='N',
                     help='input batch size for testing (default: 1000)')
 parser.add_argument('--epochs', type=int, default=15, metavar='N',
                     help='number of epochs to train (default: 10)')
@@ -107,19 +105,26 @@ train_loader = torch.utils.data.DataLoader(DatasetJorobadas(train_im, train, '..
 val_loader = torch.utils.data.DataLoader(DatasetJorobadas(val_im, val, '../data/HumpbackWhales/val_final/', 
                   image_transforms['val']),batch_size=args.batch_size, shuffle=True, **kwargs)
 
-model = models.vgg16(pretrained=True)
+#model = models.vgg16(pretrained=True)
+model = models.densenet161(pretrained=False)
 
 for param in model.parameters():
     param.requires_grad = False
 
-model.classifier = nn.Sequential(nn.Linear(25088,4096, bias=True),
-                         nn.ReLU(inplace=True),
-                         nn.Dropout(p=0.5, inplace=False),
-                         nn.Linear(4096,4096, bias=True),
-                         nn.ReLU(inplace=True),
-                         nn.Dropout(p=0.5, inplace=False),
-                         nn.Linear(in_features=4096, out_features=numwhales, bias=True),
+n_inputs =model.classifier.in_features
+model.classifier = nn.Sequential(nn.Linear(n_inputs,numwhales),
+                         nn.ReLU(),
                          nn.LogSoftmax(dim=1))
+
+
+# model.classifier = nn.Sequential(nn.Linear(25088,4096, bias=True),
+#                          nn.ReLU(inplace=True),
+#                          nn.Dropout(p=0.5, inplace=False),
+#                          nn.Linear(4096,4096, bias=True),
+#                          nn.ReLU(inplace=True),
+#                          nn.Dropout(p=0.5, inplace=False),
+#                          nn.Linear(in_features=4096, out_features=numwhales, bias=True),
+#                          nn.LogSoftmax(dim=1))
 
 if args.cuda:
     model.cuda()
@@ -131,8 +136,8 @@ if osp.exists(args.save):
         model.load_state_dict(state)
         load_model = True
 
-#optimizer = optim.Adam(model.parameters())
-optimizer = optim.Adam(model.parameters(), lr= 3e-4, betas=(0.9, 0.99), weight_decay=0.0002)
+optimizer = optim.Adam(model.parameters())
+#optimizer = optim.Adam(model.parameters(), lr= 3e-4, betas=(0.9, 0.99), weight_decay=0.0002)
 criterion= nn.NLLLoss()
 
 def Train(epoch):
@@ -158,7 +163,7 @@ def Train(epoch):
                 epoch, batch_idx * len(data), len(train_loader.dataset),
                 100. * batch_idx / len(train_loader), loss.data.item()))
 
-def curvita(recall, precision, average_precision, batchnum):
+def curvita(recall, precision, average_precision, batchnum, epoch):
     m = True
     colors = cycle(['navy', 'turquoise', 'darkorange', 'cornflowerblue', 'teal','goldenrod','darkslategrey','sandybrown','mediumseagreen','sienna'])
     plt.figure(figsize=(15, 15))
@@ -192,7 +197,7 @@ def curvita(recall, precision, average_precision, batchnum):
     plt.ylabel('Precision')
     plt.title('Extension of Precision-Recall curve to multi-class')
     plt.legend(lines, labels, loc=(0, -.38), prop=dict(size=14))
-    plt.savefig('curva.jpg')
+    plt.savefig(os.path.join('curvas/', 'ep' + str(epoch) + '.jpg'))
     return m
 
 def Validation(epoch):
@@ -276,7 +281,9 @@ def Validation(epoch):
             #m = curvita(recall, precision, average_precision,batch_classes)
             
         print('Average precision score, micro-averaged over all classes: {0:0.2f}'.format(average_precisionall[numbatch]))
-        m = curvita(recallall, precisionall, average_precisionall,numbatch)
+        if not os.path.exists("curvas"):
+            os.mkdir("curvas")
+        m = curvita(recallall, precisionall, average_precisionall, numbatch, epoch)
         
         # Calculate average losses
         val_loss = val_loss / len(val_loader.dataset)
