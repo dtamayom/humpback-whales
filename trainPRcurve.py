@@ -160,7 +160,7 @@ def Train(epoch):
 
 def curvita(recall, precision, average_precision, batchnum):
     m = True
-    colors = cycle(['navy', 'turquoise', 'darkorange', 'cornflowerblue', 'teal'])
+    colors = cycle(['navy', 'turquoise', 'darkorange', 'cornflowerblue', 'teal','goldenrod','darkslategrey','sandybrown','mediumseagreen','sienna'])
     plt.figure(figsize=(15, 15))
     f_scores = np.linspace(0.2, 0.8, num=4)
     lines = []

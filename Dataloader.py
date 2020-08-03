@@ -79,10 +79,10 @@ def Correction(path_img, path_label):
     return dict_final, dict_test, dict_val, dict_train
 
 #f, g, h, j = Correction("../data/HumpbackWhales/train/", "../data/HumpbackWhales/train.csv")
-#print(len(f))
-#print('En test', len(g))
-#print('En val', len(h))
-print('En train', len(j))
+#print('Total: ',str(len(f)),'\n')
+#print('En test: ', str(len(g)),' (',str((len(g)/len(f))*100),'%)')
+#print('En val: ', str(len(h)),' (',str((len(h)/len(f))*100),'%)')
+#print('En train: ', str(len(j)),' (',str((len(j)/len(f))*100),'%)')
 
 # Dataset class
 class DatasetJorobadas(Dataset):
