@@ -21,6 +21,7 @@ import matplotlib.pyplot as plt
 from sklearn.metrics import precision_recall_curve
 from sklearn.metrics import average_precision_score
 from sklearn.preprocessing import label_binarize
+import torch.hub
 
 #argumentos
 parser = argparse.ArgumentParser(description='CNN Whales')
@@ -30,11 +31,11 @@ parser.add_argument('--test-batch-size', type=int, default=32, metavar='N',
                     help='input batch size for testing (default: 1000)')
 parser.add_argument('--epochs', type=int, default=15, metavar='N',
                     help='number of epochs to train (default: 10)')
-parser.add_argument('--lr', type=float, default=0.01, metavar='LR',
+parser.add_argument('--lr', type=float, default=3e-4, metavar='LR',
                     help='learning rate (default: 0.01)')
-parser.add_argument('--momentum', type=float, default=0.5, metavar='M',
+parser.add_argument('--momentum', type=float, default=0.85, metavar='M',
                     help='SGD momentum (default: 0.5)')
-parser.add_argument('--gamma', type=float, default=2, metavar='M',
+parser.add_argument('--gamma', type=float, default=0.2, metavar='M',
                     help='learning rate decay factor (default: 0.5)')
 parser.add_argument('--no-cuda', action='store_true', default=False,
                     help='disables CUDA training')
@@ -105,26 +106,30 @@ train_loader = torch.utils.data.DataLoader(DatasetJorobadas(train_im, train, '..
 val_loader = torch.utils.data.DataLoader(DatasetJorobadas(val_im, val, '../data/HumpbackWhales/val_final/', 
                   image_transforms['val']),batch_size=args.batch_size, shuffle=True, **kwargs)
 
-#model = models.vgg16(pretrained=True)
-model = models.densenet161(pretrained=False)
+model = models.vgg16(pretrained=True)
+#model = models.densenet161(pretrained=True)
+#model = torch.hub.load('moskomule/senet.pytorch', 'se_resnet50', pretrained=True,)
+#model = models.squeezenet1_0()
+#model = models.inception_v3()
 
 for param in model.parameters():
-    param.requires_grad = False
+    param.requires_grad = True
 
-n_inputs =model.classifier.in_features
-model.classifier = nn.Sequential(nn.Linear(n_inputs,numwhales),
-                         nn.ReLU(),
-                         nn.LogSoftmax(dim=1))
-
-
-# model.classifier = nn.Sequential(nn.Linear(25088,4096, bias=True),
-#                          nn.ReLU(inplace=True),
-#                          nn.Dropout(p=0.5, inplace=False),
-#                          nn.Linear(4096,4096, bias=True),
-#                          nn.ReLU(inplace=True),
-#                          nn.Dropout(p=0.5, inplace=False),
-#                          nn.Linear(in_features=4096, out_features=numwhales, bias=True),
+#n_inputs =model.classifier.in_features
+# model.classifier = nn.Sequential(nn.Linear(n_inputs,numwhales),
+#                          nn.ReLU(),
 #                          nn.LogSoftmax(dim=1))
+
+#25088
+#2208
+model.classifier = nn.Sequential(nn.Linear(25088, 4096, bias=True),
+                         nn.ReLU(inplace=True),
+                         nn.Dropout(p=0.5, inplace=False),
+                         nn.Linear(4096,4096, bias=True),
+                         nn.ReLU(inplace=True),
+                         nn.Dropout(p=0.5, inplace=False),
+                         nn.Linear(in_features=4096, out_features=numwhales, bias=True),
+                         nn.LogSoftmax(dim=1))
 
 if args.cuda:
     model.cuda()
@@ -136,8 +141,10 @@ if osp.exists(args.save):
         model.load_state_dict(state)
         load_model = True
 
-optimizer = optim.Adam(model.parameters())
-#optimizer = optim.Adam(model.parameters(), lr= 3e-4, betas=(0.9, 0.99), weight_decay=0.0002)
+#optimizer = optim.Adam(model.parameters())
+optimizer = optim.Adam(model.parameters(), lr= 3e-4, betas=(0.9, 0.99), weight_decay=0.0002)
+steps = 10
+scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, steps)
 criterion= nn.NLLLoss()
 
 def Train(epoch):
@@ -154,6 +161,7 @@ def Train(epoch):
         loss = criterion(output, target)
         loss.backward()
         optimizer.step()
+        scheduler.step()
 
         # train_loss += loss.item() * data.size(0)
 
