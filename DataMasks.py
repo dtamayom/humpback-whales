@@ -5,7 +5,7 @@ import cv2
 if not os.path.exists("../data/HumpbackWhales/mask_images"):
     os.mkdir("../data/HumpbackWhales/mask_images")
 
-mask_path="../data/HumpbackWhales/masks"
+mask_path="../data/HumpbackWhales/masks_final"
 train_path="../data/HumpbackWhales/train/"
 
 c=1
