@@ -2,7 +2,7 @@ import argparse
 import os
 import numpy as np
 from tqdm import tqdm
-
+#import pycocotools
 from mypath import Path
 from dataloaders import make_data_loader
 from modeling.sync_batchnorm.replicate import patch_replication_callback
@@ -102,6 +102,7 @@ class Trainer(object):
                 image, target = image.cuda(), target.cuda()
             self.scheduler(self.optimizer, i, epoch, self.best_pred)
             self.optimizer.zero_grad()
+            self.model.eval()
             output = self.model(image)
             loss = self.criterion(output, target)
             loss.backward()
@@ -202,14 +203,14 @@ def main():
                         choices=['ce', 'focal'],
                         help='loss func type (default: ce)')
     # training hyper params
-    parser.add_argument('--epochs', type=int, default=100, metavar='N',
+    parser.add_argument('--epochs', type=int, default=30, metavar='N',
                         help='number of epochs to train (default: auto)')
-    parser.add_argument('--start_epoch', type=int, default=0,
+    parser.add_argument('--start_epoch', type=int, default=1,
                         metavar='N', help='start epochs (default:0)')
-    parser.add_argument('--batch-size', type=int, default=4,
+    parser.add_argument('--batch-size', type=int, default=10,
                         metavar='N', help='input batch size for \
                                 training (default: auto)')
-    parser.add_argument('--test-batch-size', type=int, default=4,
+    parser.add_argument('--test-batch-size', type=int, default=5,
                         metavar='N', help='input batch size for \
                                 testing (default: auto)')
     parser.add_argument('--use-balanced-weights', action='store_true', default=False,
