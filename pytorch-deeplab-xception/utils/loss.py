@@ -20,8 +20,8 @@ class SegmentationLosses(object):
 
     def CrossEntropyLoss(self, logit, target):
         n, c, h, w = logit.size()
-        criterion = nn.CrossEntropyLoss(weight=self.weight, ignore_index=self.ignore_index,
-                                        size_average=self.size_average)
+        criterion = nn.CrossEntropyLoss(weight=self.weight, size_average=self.size_average, 
+                                            reduction='mean') #ignore_index=self.ignore_index,
         if self.cuda:
             criterion = criterion.cuda()
 
