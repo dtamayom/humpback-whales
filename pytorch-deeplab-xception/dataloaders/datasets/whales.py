@@ -42,15 +42,27 @@ class WhalesSegmentation(data.Dataset):
 
         tar = self.label[index]
         tar = io.imread(self.data_path + tar)
-        tar=Image.fromarray(tar)
-        targ= transforms.functional.to_grayscale(tar)
-        tar=np.asarray(targ)
-        tar=tar[..., np.newaxis]
+        #print(tar)
+        #print(tar.shape)
+        tar = color.rgb2gray(tar)
+        #print(tar)
+        #print(tar.shape)
+        tar[tar>0.25]=1
+        tar[tar<=0.25]=0
+        #print(tar)
+        #print(tar.shape)
+        #tar=Image.fromarray(tar)
+        #targ= transforms.functional.to_grayscale(tar)
+        #tar=np.asarray(targ)
+        #tar=tar[..., np.newaxis]
+        #print(tar.shape)
         #targ=targ.unsqueeze(-1)
-        #tar=Image.fromarray(targ)
+        tar=Image.fromarray(tar,mode='L').convert('1')
+        #print(tar)
         #tar = self.resize(tar)
+        #print(tar.size)
 
-        sample = {'image': im, 'label': targ}
+        sample = {'image': im, 'label': tar}
 
         if self.split == 'train':
             return self.transform_tr(sample)

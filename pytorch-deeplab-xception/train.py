@@ -103,7 +103,6 @@ class Trainer(object):
             self.scheduler(self.optimizer, i, epoch, self.best_pred)
             self.optimizer.zero_grad()
             output = self.model(image)
-            breakpoint()
             loss = self.criterion(output, target)
             loss.backward()
             self.optimizer.step()
