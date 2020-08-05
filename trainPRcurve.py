@@ -106,8 +106,9 @@ train_loader = torch.utils.data.DataLoader(DatasetJorobadas(train_im, train, '..
 val_loader = torch.utils.data.DataLoader(DatasetJorobadas(val_im, val, '../data/HumpbackWhales/val_final/', 
                   image_transforms['val']),batch_size=args.batch_size, shuffle=True, **kwargs)
 
-model = models.vgg16(pretrained=True)
-#model = models.densenet161(pretrained=True)
+#model = models.resnet18(pretrained=False)
+#model = models.vgg16(pretrained=False)
+model = models.densenet161(pretrained=True)
 #model = torch.hub.load('moskomule/senet.pytorch', 'se_resnet50', pretrained=True,)
 #model = models.squeezenet1_0()
 #model = models.inception_v3()
@@ -115,14 +116,15 @@ model = models.vgg16(pretrained=True)
 for param in model.parameters():
     param.requires_grad = True
 
-#n_inputs =model.classifier.in_features
-# model.classifier = nn.Sequential(nn.Linear(n_inputs,numwhales),
+# n_inputs =model.fc.in_features
+# model.fc = nn.Sequential(nn.Linear(n_inputs,numwhales),
 #                          nn.ReLU(),
 #                          nn.LogSoftmax(dim=1))
 
-#25088
-#2208
-model.classifier = nn.Sequential(nn.Linear(25088, 4096, bias=True),
+#512 res 
+#25088 vgg
+#2208 de
+model.fc = nn.Sequential(nn.Linear(2208, 4096, bias=True),
                          nn.ReLU(inplace=True),
                          nn.Dropout(p=0.5, inplace=False),
                          nn.Linear(4096,4096, bias=True),
@@ -143,8 +145,8 @@ if osp.exists(args.save):
 
 #optimizer = optim.Adam(model.parameters())
 optimizer = optim.Adam(model.parameters(), lr= 3e-4, betas=(0.9, 0.99), weight_decay=0.0002)
-steps = 10
-scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, steps)
+#steps = 10
+#scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, steps)
 criterion= nn.NLLLoss()
 
 def Train(epoch):
@@ -161,7 +163,7 @@ def Train(epoch):
         loss = criterion(output, target)
         loss.backward()
         optimizer.step()
-        scheduler.step()
+        #scheduler.step()
 
         # train_loss += loss.item() * data.size(0)
 
