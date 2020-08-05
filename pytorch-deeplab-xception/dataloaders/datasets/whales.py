@@ -6,24 +6,28 @@ from torch.utils import data
 from mypath import Path
 from torchvision import transforms
 from dataloaders import custom_transforms as tr
+import skimage.io as io
+import skimage.color as color
 
 class WhalesSegmentation(data.Dataset):
-    NUM_CLASSES = 1
+    NUM_CLASSES = 2
 
-    def __init__(self, args, root=Path.db_root_dir('whales'), image, label, split):
+    def __init__(self, args, data_path, image, label, split, drop_last):
         super(WhalesSegmentation, self).__init__()
         'Initialization'
+        self.args=args
+        self.data_path = data_path
         self.image = image        #lista de la carpeta de las imagenes de cada particion
         self.label = label      #diccionario de imagenes y anotacion (train,val o test)
-        self.root = root        #'../data/HumpbackWhales/'
-        self.resize = transforms.Resize(size=(224,224))
+        #self.resize = transforms.Resize(size=(224,224))
         self.split = split
+        self.drop_last=drop_last
 
-        self.void_classes = [0, -1]
-        self.valid_classes = [1, 2]
+        #self.void_classes = [2]
+        self.valid_classes = [0, 1]
         self.class_names = ['whale','background']
 
-        self.ignore_index = 255
+        #self.ignore_index = 255
         self.class_map = dict(zip(self.valid_classes, range(self.NUM_CLASSES)))
 
     def __len__(self):
@@ -34,14 +38,19 @@ class WhalesSegmentation(data.Dataset):
         im = self.image[index]
         im = io.imread(self.data_path + im)
         im=Image.fromarray(im)
-        im = self.resize(im)
+        #im = self.resize(im)
 
         tar = self.label[index]
         tar = io.imread(self.data_path + tar)
         tar=Image.fromarray(tar)
-        tar = self.resize(tar)
+        targ= transforms.functional.to_grayscale(tar)
+        tar=np.asarray(targ)
+        tar=tar[..., np.newaxis]
+        #targ=targ.unsqueeze(-1)
+        #tar=Image.fromarray(targ)
+        #tar = self.resize(tar)
 
-        sample = {'image': im, 'label': tar}
+        sample = {'image': im, 'label': targ}
 
         if self.split == 'train':
             return self.transform_tr(sample)
@@ -52,8 +61,8 @@ class WhalesSegmentation(data.Dataset):
 
     def encode_segmap(self, mask):
         # Put all void classes to zero
-        for _voidc in self.void_classes:
-            mask[mask == _voidc] = self.ignore_index
+        #for _voidc in self.void_classes:
+            #mask[mask == _voidc] = self.ignore_index
         for _validc in self.valid_classes:
             mask[mask == _validc] = self.class_map[_validc]
         return mask
@@ -86,20 +95,20 @@ class WhalesSegmentation(data.Dataset):
 
         return composed_transforms(sample)
 
-# if __name__ == '__main__':
-#     from dataloaders.utils import decode_segmap
-#     from torch.utils.data import DataLoader
-#     import matplotlib.pyplot as plt
-#     import argparse
+if __name__ == '__main__':
+     from dataloaders.utils import decode_segmap
+     from torch.utils.data import DataLoader
+     import matplotlib.pyplot as plt
+     import argparse
 
-#     parser = argparse.ArgumentParser()
-#     args = parser.parse_args()
-#     args.base_size = 513
-#     args.crop_size = 513
+     parser = argparse.ArgumentParser()
+     args = parser.parse_args()
+     args.base_size = 513
+     args.crop_size = 513
 
-#     whales_train = WhalesSegmentation(args)
+     whales_train = WhalesSegmentation(args)
 
-#     dataloader = DataLoader(whales_train, batch_size=2, shuffle=True, num_workers=2)
+     dataloader = DataLoader(whales_train, batch_size=4, shuffle=True, num_workers=2)
 
 #     for ii, sample in enumerate(dataloader):
 #         for jj in range(sample["image"].size()[0]):
