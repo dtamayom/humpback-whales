@@ -28,6 +28,7 @@ class Trainer(object):
         # Define Dataloader
         kwargs = {'num_workers': args.workers, 'pin_memory': True}
         self.train_loader, self.val_loader, self.test_loader, self.nclass = make_data_loader(args, **kwargs)
+                         
 
         # Define network
         model = DeepLab(num_classes=self.nclass,
@@ -102,6 +103,7 @@ class Trainer(object):
             self.scheduler(self.optimizer, i, epoch, self.best_pred)
             self.optimizer.zero_grad()
             output = self.model(image)
+            breakpoint()
             loss = self.criterion(output, target)
             loss.backward()
             self.optimizer.step()
@@ -201,14 +203,14 @@ def main():
                         choices=['ce', 'focal'],
                         help='loss func type (default: ce)')
     # training hyper params
-    parser.add_argument('--epochs', type=int, default=None, metavar='N',
+    parser.add_argument('--epochs', type=int, default=100, metavar='N',
                         help='number of epochs to train (default: auto)')
     parser.add_argument('--start_epoch', type=int, default=0,
                         metavar='N', help='start epochs (default:0)')
-    parser.add_argument('--batch-size', type=int, default=None,
+    parser.add_argument('--batch-size', type=int, default=4,
                         metavar='N', help='input batch size for \
                                 training (default: auto)')
-    parser.add_argument('--test-batch-size', type=int, default=None,
+    parser.add_argument('--test-batch-size', type=int, default=4,
                         metavar='N', help='input batch size for \
                                 testing (default: auto)')
     parser.add_argument('--use-balanced-weights', action='store_true', default=False,
