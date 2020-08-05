@@ -10,7 +10,7 @@ class Path(object):
         elif dataset == 'coco':
             return '/path/to/datasets/coco/'
         elif dataset == 'whales':
-            return '../data/HumpbackWhales/segmentacion/'
+            return '../data/HumpbackWhales/pytorch-deeplab-xception/dataloaders/datasets/whales'
         else:
             print('Dataset {} not available.'.format(dataset))
             raise NotImplementedError
