@@ -37,7 +37,11 @@ class ToTensor(object):
         img = sample['image']
         mask = sample['label']
         img = np.array(img).astype(np.float32).transpose((2, 0, 1))
-        mask = np.array(mask).astype(np.float32)
+        mask = np.array(mask).astype(np.float32) #.transpose((2, 0, 1))
+        #mask=mask[..., np.newaxis]
+        #mask= mask.transpose((0, 3, 1, 2))
+        #print(img.shape)
+        #print(mask.shape)
 
         img = torch.from_numpy(img).float()
         mask = torch.from_numpy(mask).float()
