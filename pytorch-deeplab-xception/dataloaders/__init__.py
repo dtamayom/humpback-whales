@@ -1,5 +1,6 @@
 from dataloaders.datasets import cityscapes, coco, combine_dbs, pascal, sbd, whales
 from torch.utils.data import DataLoader
+import os
 
 def make_data_loader(args, **kwargs):
 
@@ -38,13 +39,13 @@ def make_data_loader(args, **kwargs):
         return train_loader, val_loader, test_loader, num_class
 
     elif args.dataset == 'whales':
-        train_path="../data/HumpbackWhales/segmentacion/train/")
-        val_path="../data/HumpbackWhales/segmentacion/val/"
-        test_path="../data/HumpbackWhales/segmentacion/test/"
+        train_path = "../../data/HumpbackWhales/segmentacion/train/"
+        val_path = "../../data/HumpbackWhales/segmentacion/val/"
+        test_path = "../../data/HumpbackWhales/segmentacion/test/"
 
-        train_set = whales.WhalesSegmentation(args,image=os.listdir(train_path+'mask_images_train/'),label=os.listdir(train_path+'mask_train/'),split='train')
-        val_set = whales.WhalesSegmentation(args,image=os.listdir(val_path+'mask_images_val/'),label=os.listdir(train_path+'mask_val/'),split='val')
-        test_set = whales.WhalesSegmentation(args,image=os.listdir(test_path),label=os.listdir(test_path),split='test')
+        train_set = whales.WhalesSegmentation(args, data_path=train_path+'mask_images_train/', image=os.listdir(train_path+'mask_images_train/'),label=os.listdir(train_path+'mask_train/'),split='train', drop_last=True)
+        val_set = whales.WhalesSegmentation(args, data_path=val_path+'mask_images_val/', image=os.listdir(val_path+'mask_images_val/'),label=os.listdir(val_path+'mask_val/'),split='val', drop_last=True)
+        test_set = whales.WhalesSegmentation(args, data_path=test_path, image=os.listdir(test_path),label= None, split='test', drop_last=True) #,label=os.listdir(test_path)
         
         num_class=train_set.NUM_CLASSES
 
