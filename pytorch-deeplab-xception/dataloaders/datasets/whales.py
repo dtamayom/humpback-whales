@@ -44,11 +44,13 @@ class WhalesSegmentation(data.Dataset):
         tar = io.imread(self.data_path + tar)
         #print(tar)
         #print(tar.shape)
-        tar = color.rgb2gray(tar)
+        tar = color.rgb2gray(tar)*255
         #print(tar)
         #print(tar.shape)
-        tar[tar>0.25]=1
-        tar[tar<=0.25]=0
+        # tar[tar>0.25]=1
+        # tar[tar<=0.25]=0
+        tar[tar>250]=255
+        tar[tar<=250]=0
         #print(tar)
         #print(tar.shape)
         #tar=Image.fromarray(tar)
