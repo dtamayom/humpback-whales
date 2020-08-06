@@ -96,7 +96,6 @@ class Tester(object):
                     
                     with torch.no_grad():
                         output = self.model(test_crop_tensor)
-                    #breakpoint()
                     pred = output.data.cpu().numpy()
                     pred=np.argmax(pred, axis=1)*255
                     #pred = np.round(pred)*255
