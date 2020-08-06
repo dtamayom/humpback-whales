@@ -24,7 +24,7 @@ class WhalesSegmentation(data.Dataset):
         self.drop_last=drop_last
 
         #self.void_classes = [2]
-        self.valid_classes = [0, 1]
+        self.valid_classes = [0, 255]
         self.class_names = ['whale','background']
 
         #self.ignore_index = 255
