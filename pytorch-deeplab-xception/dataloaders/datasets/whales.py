@@ -12,19 +12,19 @@ import skimage.color as color
 class WhalesSegmentation(data.Dataset):
     NUM_CLASSES = 2
 
-    def __init__(self, args, data_path, image, label, split, drop_last):
+    def __init__(self, args, images_path, label_path, image, split, drop_last):
         super(WhalesSegmentation, self).__init__()
         'Initialization'
         self.args=args
-        self.data_path = data_path
-        self.image = image        #lista de la carpeta de las imagenes de cada particion
-        self.label = label      #diccionario de imagenes y anotacion (train,val o test)
+        self.images_path = images_path  #carpeta train/val o test mask_images
+        self.label_path =label_path    #carpeta train/val o test mask
+        self.image = image        #listdir de la carpeta de las imagenes de cada particion
         #self.resize = transforms.Resize(size=(224,224))
         self.split = split
         self.drop_last=drop_last
 
-        #self.void_classes = [2]
-        self.valid_classes = [0, 1]
+        self.void_classes = []
+        self.valid_classes = [255, 0]
         self.class_names = ['whale','background']
 
         #self.ignore_index = 255
@@ -35,36 +35,20 @@ class WhalesSegmentation(data.Dataset):
 
     def __getitem__(self, index):
 
-        im = self.image[index]
-        im = io.imread(self.data_path + im)
-        im=Image.fromarray(im)
-        #im = self.resize(im)
+        imid = self.image[index]
+        #im = io.imread(self.images_path + imid)
+        #im=Image.fromarray(im)
+        im=Image.open(self.images_path+imid) 
+        #im.save('im'+imid)
 
-        tar = self.label[index]
-        tar = io.imread(self.data_path + tar)
-        #print(tar)
-        #print(tar.shape)
-        tar = color.rgb2gray(tar)
-        #print(tar)
-        #print(tar.shape)
-        # tar[tar>0.25]=1
-        # tar[tar<=0.25]=0
-        tar[tar>200]=255
-        tar[tar<=200]=0
-        #print(tar)
-        #print(tar.shape)
-        #tar=Image.fromarray(tar)
-        #targ= transforms.functional.to_grayscale(tar)
-        #tar=np.asarray(targ)
-        #tar=tar[..., np.newaxis]
-        #print(tar.shape)
-        #targ=targ.unsqueeze(-1)
-        tar=Image.fromarray(tar,mode='L').convert('1')
-        #print(tar)
-        #tar = self.resize(tar)
-        #print(tar.size)
+        tar=Image.open(self.label_path+imid)
+        tar.save('tar'+imid)
+        #tar=Image.fromarray(tar,mode='L').convert('1')
+        fn = lambda x : 255 if x >= 200 else 0
+        target = tar.convert('L').point(fn, mode='1')
+        #target.save('um'+imid)
 
-        sample = {'image': im, 'label': tar}
+        sample = {'image': im, 'label': target}
 
         if self.split == 'train':
             return self.transform_tr(sample)
