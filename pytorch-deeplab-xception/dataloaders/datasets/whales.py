@@ -24,7 +24,7 @@ class WhalesSegmentation(data.Dataset):
         self.drop_last=drop_last
 
         #self.void_classes = [2]
-        self.valid_classes = [0, 255]
+        self.valid_classes = [0, 1]
         self.class_names = ['whale','background']
 
         #self.ignore_index = 255
@@ -44,13 +44,13 @@ class WhalesSegmentation(data.Dataset):
         tar = io.imread(self.data_path + tar)
         #print(tar)
         #print(tar.shape)
-        tar = color.rgb2gray(tar)*255
+        tar = color.rgb2gray(tar)
         #print(tar)
         #print(tar.shape)
         # tar[tar>0.25]=1
         # tar[tar<=0.25]=0
-        tar[tar>250]=255
-        tar[tar<=250]=0
+        tar[tar>200]=255
+        tar[tar<=200]=0
         #print(tar)
         #print(tar.shape)
         #tar=Image.fromarray(tar)
