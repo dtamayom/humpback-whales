@@ -43,15 +43,21 @@ def make_data_loader(args, **kwargs):
         val_path = "../../data/HumpbackWhales/segmentacion/val/"
         test_path = "../../data/HumpbackWhales/segmentacion/test/"
 
-        train_set = whales.WhalesSegmentation(args, data_path=train_path+'mask_images_train/', image=os.listdir(train_path+'mask_images_train/'),label=os.listdir(train_path+'mask_train/'),split='train', drop_last=True)
-        val_set = whales.WhalesSegmentation(args, data_path=val_path+'mask_images_val/', image=os.listdir(val_path+'mask_images_val/'),label=os.listdir(val_path+'mask_val/'),split='val', drop_last=True)
-        test_set = whales.WhalesSegmentation(args, data_path=test_path, image=os.listdir(test_path),label= None, split='test', drop_last=True) #,label=os.listdir(test_path)
+        train_set = whales.WhalesSegmentation(args, images_path=train_path+'mask_images_train/', 
+                    label_path= train_path+'mask_train/', image=os.listdir(train_path+'mask_images_train/'),
+                    split='train', drop_last=True)
+        
+        val_set = whales.WhalesSegmentation(args, images_path=val_path+'mask_images_val/', 
+                    label_path=val_path+'mask_val/', image=os.listdir(val_path+'mask_images_val/'),
+                    split='val', drop_last=True)
+        test_set = whales.WhalesSegmentation(args, images_path=test_path, 
+                    label_path=0, image=os.listdir(test_path), split='test', drop_last=True) #,label=os.listdir(test_path)
         
         num_class=train_set.NUM_CLASSES
 
         train_loader = DataLoader(train_set, batch_size=args.batch_size, shuffle=True, **kwargs)
         val_loader = DataLoader(val_set, batch_size=args.batch_size, shuffle=False, **kwargs)
-        test_loader = DataLoader(val_set, batch_size=args.batch_size, shuffle=False, **kwargs)
+        test_loader = DataLoader(test_set, batch_size=args.batch_size, shuffle=False, **kwargs)
 
         return train_loader,val_loader,test_loader,num_class
 
