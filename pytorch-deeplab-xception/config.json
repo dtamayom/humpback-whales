@@ -5,8 +5,8 @@
         "backbone": "resnet",
         "out_stride": 16,
         "crop_size": 513, 
-        "data_path": "../../data/HumpbackWhales/segmentacion/train/mask_images_train",
+        "data_path": "../../data/HumpbackWhales/train_final",
         "save_path": "../../data/HumpbackWhales/train_masks",
-        "model": "run/whales/deeplab-resnet/experiment_4/checkpoint.pth.tar"
+        "model": "run/whales/deeplab-resnet/model_best.pth.tar"
     }
 }
