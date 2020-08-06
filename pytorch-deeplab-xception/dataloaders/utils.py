@@ -108,4 +108,4 @@ def get_whales_labels():
     Returns:
         np.ndarray with dimensions (2, 3)
     """
-    return np.asarray([[255, 255, 255],[0, 0, 0]])
+    return np.asarray([[255, 255, 255], [0, 0, 0]])
