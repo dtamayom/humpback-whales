@@ -63,16 +63,19 @@ with open('train_final.csv', mode='r') as file1:
     reader = csv.reader(file1)
     train = {rows[0]:rows[1] for rows in reader}
 train_im=os.listdir('../data/HumpbackWhales/train_final/')
+train_mascapath = '../data/HumpbackWhales/train_masks/'
 
 with open('val_final.csv', mode='r') as file2:
     reader = csv.reader(file2)
     val = {rows[0]:rows[1] for rows in reader}
 val_im=os.listdir('../data/HumpbackWhales/val_final/')
+val_mascapath = '../data/HumpbackWhales/val_masks/'
 
 with open('test_final.csv', mode='r') as file3:
     reader = csv.reader(file3)
     test = {rows[0]:rows[1] for rows in reader}
 test_im=os.listdir('../data/HumpbackWhales/test_final/')
+test_mascapath = '../data/HumpbackWhales/test_masks/'
 
 path= '../data/HumpbackWhales/'
 
@@ -99,19 +102,21 @@ image_transforms = {
     ]),
 }
 
-train_loader = torch.utils.data.DataLoader(DatasetJorobadas(train_im, train, '../data/HumpbackWhales/train_final/',
+train_loader = torch.utils.data.DataLoader(DatasetJorobadas(train_im, train, '../data/HumpbackWhales/train_final/', train_mascapath,
                   image_transforms['train']),batch_size=args.batch_size, shuffle=True, **kwargs)
 
 
-val_loader = torch.utils.data.DataLoader(DatasetJorobadas(val_im, val, '../data/HumpbackWhales/val_final/', 
+val_loader = torch.utils.data.DataLoader(DatasetJorobadas(val_im, val, '../data/HumpbackWhales/val_final/', val_mascapath,
                   image_transforms['val']),batch_size=args.batch_size, shuffle=True, **kwargs)
 
 #model = models.resnet18(pretrained=False)
-#model = models.vgg16(pretrained=False)
-model = models.densenet161(pretrained=True)
+model = models.vgg16(pretrained=False)
+#model = models.densenet161(pretrained=True)
 #model = torch.hub.load('moskomule/senet.pytorch', 'se_resnet50', pretrained=True,)
 #model = models.squeezenet1_0()
 #model = models.inception_v3()
+
+
 
 for param in model.parameters():
     param.requires_grad = True
@@ -124,7 +129,9 @@ for param in model.parameters():
 #512 res 
 #25088 vgg
 #2208 de
-model.fc = nn.Sequential(nn.Linear(2208, 4096, bias=True),
+#Para 4o canal
+model.features.0 = nn.Conv2d(4, 96, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
+model.classifier = nn.Sequential(nn.Linear(25088, 4096, bias=True),
                          nn.ReLU(inplace=True),
                          nn.Dropout(p=0.5, inplace=False),
                          nn.Linear(4096,4096, bias=True),
@@ -132,6 +139,8 @@ model.fc = nn.Sequential(nn.Linear(2208, 4096, bias=True),
                          nn.Dropout(p=0.5, inplace=False),
                          nn.Linear(in_features=4096, out_features=numwhales, bias=True),
                          nn.LogSoftmax(dim=1))
+
+print(model)
 
 if args.cuda:
     model.cuda()

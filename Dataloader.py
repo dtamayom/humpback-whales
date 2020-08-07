@@ -78,7 +78,7 @@ def Correction(path_img, path_label):
             w3.writerow([img, att])
     return dict_final, dict_test, dict_val, dict_train
 
-#f, g, h, j = Correction("../data/HumpbackWhales/train/", "../data/HumpbackWhales/train.csv")
+#     f, g, h, j = Correction("../data/HumpbackWhales/train/", "../data/HumpbackWhales/train.csv")
 #print('Total: ',str(len(f)),'\n')
 #print('En test: ', str(len(g)),' (',str((len(g)/len(f))*100),'%)')
 #print('En val: ', str(len(h)),' (',str((len(h)/len(f))*100),'%)')
@@ -87,12 +87,13 @@ def Correction(path_img, path_label):
 # Dataset class
 class DatasetJorobadas(Dataset):
   'Caracteriza dataset para PyTorch'
-  def __init__(self, image, label, data_path, transform):
+  def __init__(self, image, label, data_path, mascapath, transform):
         super(DatasetJorobadas, self).__init__()
         'Initialization'
         self.image = image        #lista de la carpeta de las imagenes de cada particion
         self.label = label      #diccionario de imagenes y anotacion (train,val o test)
-        self.data_path = data_path        #'../data/HumpbackWhales/'
+        self.data_path = data_path
+        self.mascapath = mascapath        #'../data/HumpbackWhales/'
         self.transform = transform
         self.resize = transforms.Resize(size=(224,224))       
 
@@ -106,12 +107,19 @@ class DatasetJorobadas(Dataset):
         # Load data and get attributes
         label = self.label[im]
         image = io.imread(self.data_path + im)
+        im_mask = io.imread(self.mascapath + im)
         #image = transform.resize(image,(224,224))
         image=Image.fromarray(image)
         image = self.resize(image)
+        im_mask=Image.fromarray(im_mask)
+        im_mask = self.resize(im_mask)
         #image=Image.fromarray(image)
         #print(image.shape())
         if self.transform:
+            im_mask = self.transform(im_mask)
+        if self.transform:
             image = self.transform(image)
+        #4 Canal 
+        image_input = torch.cat([image, im_mask], dim=0)
         
-        return image, label
+        return image_input, label
