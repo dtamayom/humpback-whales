@@ -1,0 +1,292 @@
+#test
+#'Proyecto Ballenas jorobadas BCV train.py'
+import time
+import argparse
+import os.path as osp
+import torch
+import torch.optim as optim
+from tqdm import tqdm
+import torch.nn.functional as F
+from torch.autograd import Variable
+from torchvision import datasets, transforms, models
+#from architecture import Net
+from Dataloader import DatasetJorobadas
+import torch.nn as nn
+import numpy as np
+import csv
+import os
+import sklearn.metrics as metrics
+from itertools import cycle
+import matplotlib.pyplot as plt
+from sklearn.metrics import precision_recall_curve
+from sklearn.metrics import average_precision_score
+from sklearn.preprocessing import label_binarize
+import torch.hub
+
+#argumentos
+parser = argparse.ArgumentParser(description='CNN Whales')
+parser.add_argument('--batch-size', type=int, default=32, metavar='N',
+                    help='input batch size for training (default: 64)')
+parser.add_argument('--test-batch-size', type=int, default=32, metavar='N',
+                    help='input batch size for testing (default: 1000)')
+parser.add_argument('--epochs', type=int, default=15, metavar='N',
+                    help='number of epochs to train (default: 10)')
+parser.add_argument('--lr', type=float, default=3e-4, metavar='LR',
+                    help='learning rate (default: 0.01)')
+parser.add_argument('--momentum', type=float, default=0.85, metavar='M',
+                    help='SGD momentum (default: 0.5)')
+parser.add_argument('--gamma', type=float, default=0.2, metavar='M',
+                    help='learning rate decay factor (default: 0.5)')
+parser.add_argument('--no-cuda', action='store_true', default=False,
+                    help='disables CUDA training')
+parser.add_argument('--seed', type=int, default=1, metavar='S',
+                    help='random seed (default: 1)')
+parser.add_argument('--log-interval', type=int, default=10, metavar='N',
+                    help='how many batches to wait before '
+                         'logging training status')
+parser.add_argument('--save', type=str, default='augmented2.pt',
+                    help='file on which to save model weights')
+
+numwhales = 66
+
+args = parser.parse_args()
+args.cuda = not args.no_cuda and torch.cuda.is_available()
+
+torch.manual_seed(args.seed)
+if args.cuda:
+    torch.cuda.manual_seed(args.seed)
+
+
+kwargs = {'num_workers': 1, 'pin_memory': True} if args.cuda else {}
+
+
+with open('test_final.csv', mode='r') as file3:
+    reader = csv.reader(file3)
+    test = {rows[0]:rows[1] for rows in reader}
+test_im=os.listdir('../data/HumpbackWhales/test_final/')
+test_mascapath = '../data/HumpbackWhales/test_masks/'
+
+path= '../data/HumpbackWhales/'
+
+# Image transformations
+transf_test=transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Normalize((0.485, 0.456, 0.406), 
+                             (0.229, 0.224, 0.225))
+    ])
+
+test_loader = torch.utils.data.DataLoader(DatasetJorobadas(test_im, test, '../data/HumpbackWhales/test_final/', test_mascapath,
+                  transf_test),batch_size=args.batch_size, shuffle=True, **kwargs)
+
+model = models.resnet18(pretrained=False)
+#model = models.vgg16(pretrained=False)
+#model = models.densenet161(pretrained=True)
+#model = torch.hub.load('moskomule/senet.pytorch', 'se_resnet50', pretrained=True,)
+#model = models.squeezenet1_0()
+#model = models.inception_v3()
+
+#print(model)
+
+
+for param in model.parameters():
+    param.requires_grad = True
+
+#n_inputs =model.fc.in_features
+#model.fc = nn.Sequential(nn.Linear(n_inputs,numwhales),
+#                        nn.ReLU(),
+#                        nn.LogSoftmax(dim=1))
+
+#512 res 
+#25088 vgg
+#2208 de
+#Para 4o canal
+#model.features.conv0 = nn.Conv2d(4, 96, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
+""" model.features = nn.Sequential(nn.Conv2d(4, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)),
+    nn.ReLU(inplace=True),
+    nn.Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)),
+    nn.ReLU(inplace=True),
+    nn.MaxPool2d(kernel_size=2, stride=2, padding=0, dilation=1, ceil_mode=False),
+    nn.Conv2d(64, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)),
+    nn.ReLU(inplace=True),
+    nn.Conv2d(128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)),
+    nn.ReLU(inplace=True),
+    nn.MaxPool2d(kernel_size=2, stride=2, padding=0, dilation=1, ceil_mode=False),
+    nn.Conv2d(128, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)),
+    nn.ReLU(inplace=True),
+    nn.Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)),
+    nn.ReLU(inplace=True),
+    nn.Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)),
+    nn.ReLU(inplace=True),
+    nn.MaxPool2d(kernel_size=2, stride=2, padding=0, dilation=1, ceil_mode=False),
+    nn.Conv2d(256, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)),
+    nn.ReLU(inplace=True),
+    nn.Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)),
+    nn.ReLU(inplace=True),
+    nn.Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)),
+    nn.ReLU(inplace=True),
+    nn.MaxPool2d(kernel_size=2, stride=2, padding=0, dilation=1, ceil_mode=False),
+    nn.Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)),
+    nn.ReLU(inplace=True),
+    nn.Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)),
+    nn.ReLU(inplace=True),
+    nn.Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)),
+    nn.ReLU(inplace=True),
+    nn.MaxPool2d(kernel_size=2, stride=2, padding=0, dilation=1, ceil_mode=False))
+model.classifier = nn.Sequential(nn.Linear(25088, 4096, bias=True),
+                         nn.ReLU(inplace=True),
+                         nn.Dropout(p=0.5, inplace=False),
+                         nn.Linear(4096,4096, bias=True),
+                         nn.ReLU(inplace=True),
+                         nn.Dropout(p=0.5, inplace=False),
+                         nn.Linear(in_features=4096, out_features=numwhales, bias=True),
+                         nn.LogSoftmax(dim=1)) """
+
+#print(model)
+
+if args.cuda:
+    model.cuda()
+
+criterion= nn.NLLLoss()
+
+def curvita(recall, precision, average_precision, batchnum, epoch):
+    m = True
+    colors = cycle(['navy', 'turquoise', 'darkorange', 'cornflowerblue', 'teal','goldenrod','darkslategrey','sandybrown','mediumseagreen','sienna'])
+    plt.figure(figsize=(15, 15))
+    f_scores = np.linspace(0.2, 0.8, num=4)
+    lines = []
+    labels = []
+    for f_score in f_scores:
+        x = np.linspace(0.01, 1)
+        y = f_score * x / (2 * x - f_score)
+        l, = plt.plot(x[y >= 0], y[y >= 0], color='gray', alpha=0.2)
+        plt.annotate('f1={0:0.1f}'.format(f_score), xy=(0.9, y[45] + 0.02))
+
+    # lines.append(l)
+    # labels.append('iso-f1 curves')
+    # l, = plt.plot(recall["micro"], precision["micro"], color='gold', lw=2)
+    # lines.append(l)
+    # labels.append('micro-average Precision-recall (area = {0:0.2f})'
+    #             ''.format(average_precision["micro"]))
+
+    for i, color in zip(range(batchnum), colors):
+        l, = plt.plot(recall[i], precision[i], color=color, lw=2)
+        lines.append(l)
+        labels.append('Precision-recall for batch {0} (area = {1:0.2f})'
+                    ''.format(i, average_precision[i]))
+
+    fig = plt.gcf()
+    fig.subplots_adjust(bottom=0.25)
+    plt.xlim([0.0, 1.0])
+    plt.ylim([0.0, 1.05])
+    plt.xlabel('Recall')
+    plt.ylabel('Precision')
+    plt.title('Extension of Precision-Recall curve to multi-class')
+    plt.legend(lines, labels, loc=(0, -.38), prop=dict(size=14))
+    plt.savefig(os.path.join('curvas/', 'ep' + str(epoch) + '.jpg'))
+    return m
+
+def Test(epoch):
+    with torch.no_grad():
+        test_loss=0.0
+        test_acc=0.0
+        prec=[]
+        reca=[]
+        fbeta=[] 
+        precisionall = dict()
+        recallall = dict()
+        average_precisionall = dict()
+
+        # Set to evaluation mode
+        model.eval()
+        # Test loop
+        numbatch=-1
+        for data, target in test_loader:
+            numbatch+=1
+            target=list(map(int,target))
+            target=torch.tensor(target)
+            target=target.long()
+
+            precision = dict()
+            recall = dict()
+            average_precision = dict()
+
+            if args.cuda:
+                data, target = data.cuda(), target.cuda()
+            data, target = Variable(data), Variable(target)
+            # Forward pass
+            output = model(data.float())
+            sig=nn.Sigmoid()
+            proba = sig(output)
+            # Test loss
+            loss = criterion(output.float(), target)
+            # Multiply average loss times the number of examples in batch
+            test_loss += loss.item() * data.size(0)
+            # Calculate Test accuracy
+            _, pred = torch.max(output, dim=1)
+            pred = pred.cuda()
+            correct_tensor = pred.eq(target.data.view_as(pred))
+            accuracy = torch.mean(correct_tensor.type(torch.FloatTensor))
+            # Multiply average accuracy times the number of examples
+            test_acc += accuracy.item() * data.size(0)
+            #Calculate metrics
+            pre, rec, f, _= metrics.precision_recall_fscore_support(target.cpu().numpy(), pred.cpu().numpy(), average='weighted', zero_division=0)
+            prec.append(pre)
+            reca.append(rec)
+            fbeta.append(f)
+
+            # tar = []
+            # for t in range(len(target)):
+            #     tar.append([])
+            #     for i in range(0, 66):
+            #         if target[t] == i: 
+            #             tar[t].append(1)
+            #         else:
+            #             tar[t].append(0) 
+            batch_classes = sorted(set(target.cpu().numpy()))
+            tar = label_binarize(target.cpu(),classes=[*batch_classes])
+                #binary_pred= label_binarize(pred.cpu(),classes=[*range(batch_classes)])
+            
+            pru = []
+            tarcompleto=[]
+            b=-1
+            for i in batch_classes:
+                #precision, recall, fbeta, support= metrics.precision_recall_fscore_support(target, pred.cpu().numpy(), average='binary', pos_label=i)
+                b+=1
+
+                precision[i], recall[i], _ = precision_recall_curve(tar[:, b], proba[:, i].cpu())
+                pru.append(proba[:, i].cpu().numpy())
+                tarcompleto.append(tar[:, b])
+                
+                average_precision[i] = average_precision_score(tar[:, b], proba[:, i].cpu())
+
+            # A "micro-average": quantifying score on all classes jointly
+            precisionall[numbatch], recallall[numbatch], _ = precision_recall_curve(np.array(tarcompleto).ravel(), np.array(pru).ravel())
+            average_precisionall[numbatch] = average_precision_score(tarcompleto, pru, average="micro")
+
+            #m = curvita(recall, precision, average_precision,batch_classes)
+            
+        print('Average precision score, micro-averaged over all classes: {0:0.2f}'.format(average_precisionall[numbatch]))
+        if not os.path.exists("curvas"):
+            os.mkdir("curvas")
+        m = curvita(recallall, precisionall, average_precisionall, numbatch, epoch)
+        
+        # Calculate average losses
+        test_loss = test_loss / len(test_loader.dataset)
+
+        # Calculate average accuracy
+        test_acc = test_acc / len(test_loader.dataset)
+
+        test_precision = sum(prec)/len(prec)
+        test_recall= sum(reca)/len(reca)
+        test_fbeta= sum(fbeta)/len(fbeta)
+
+        print(f'\nEpoch: {epoch} \tTest Loss: {test_loss:.4f}')
+        print(f'\t\t Test Accuracy: {100 * test_acc:.2f}%')
+        print(f'Test avg Precision: {100*test_precision:.2f}%')
+        print(f'Test avg Recall: {100*test_recall:.2f}%')
+        print(f'Test avg Fbeta: {100*test_fbeta:.2f}%')
+
+    return(test_loss)
+
+if __name__ == '__main__':
+    test_loss= Test(0)
