@@ -110,8 +110,8 @@ val_loader = torch.utils.data.DataLoader(DatasetJorobadas(val_im, val, '../data/
                   image_transforms['val']),batch_size=args.batch_size, shuffle=True, **kwargs)
 
 #model = models.resnet18(pretrained=False)
-model = models.vgg16(pretrained=False)
-#model = models.densenet161(pretrained=True)
+#model = models.vgg16(pretrained=False)
+model = models.densenet161(pretrained=True)
 #model = torch.hub.load('moskomule/senet.pytorch', 'se_resnet50', pretrained=True,)
 #model = models.squeezenet1_0()
 #model = models.inception_v3()
@@ -130,8 +130,8 @@ for param in model.parameters():
 #25088 vgg
 #2208 de
 #Para 4o canal
-model.features.0 = nn.Conv2d(4, 96, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
-model.classifier = nn.Sequential(nn.Linear(25088, 4096, bias=True),
+model.features.conv0 = nn.Conv2d(4, 96, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
+model.classifier = nn.Sequential(nn.Linear(2208, 4096, bias=True),
                          nn.ReLU(inplace=True),
                          nn.Dropout(p=0.5, inplace=False),
                          nn.Linear(4096,4096, bias=True),
@@ -140,7 +140,7 @@ model.classifier = nn.Sequential(nn.Linear(25088, 4096, bias=True),
                          nn.Linear(in_features=4096, out_features=numwhales, bias=True),
                          nn.LogSoftmax(dim=1))
 
-print(model)
+#print(model)
 
 if args.cuda:
     model.cuda()
