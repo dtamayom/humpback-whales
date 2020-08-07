@@ -110,12 +110,13 @@ val_loader = torch.utils.data.DataLoader(DatasetJorobadas(val_im, val, '../data/
                   image_transforms['val']),batch_size=args.batch_size, shuffle=True, **kwargs)
 
 #model = models.resnet18(pretrained=False)
-#model = models.vgg16(pretrained=False)
-model = models.densenet161(pretrained=True)
+model = models.vgg16(pretrained=False)
+#model = models.densenet161(pretrained=True)
 #model = torch.hub.load('moskomule/senet.pytorch', 'se_resnet50', pretrained=True,)
 #model = models.squeezenet1_0()
 #model = models.inception_v3()
 
+#print(model)
 
 
 for param in model.parameters():
@@ -130,8 +131,39 @@ for param in model.parameters():
 #25088 vgg
 #2208 de
 #Para 4o canal
-model.features.conv0 = nn.Conv2d(4, 96, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
-model.classifier = nn.Sequential(nn.Linear(2208, 4096, bias=True),
+#model.features.conv0 = nn.Conv2d(4, 96, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
+model.features = nn.Sequential(nn.Conv2d(4, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)),
+    nn.ReLU(inplace=True),
+    nn.Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)),
+    nn.ReLU(inplace=True),
+    nn.MaxPool2d(kernel_size=2, stride=2, padding=0, dilation=1, ceil_mode=False),
+    nn.Conv2d(64, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)),
+    nn.ReLU(inplace=True),
+    nn.Conv2d(128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)),
+    nn.ReLU(inplace=True),
+    nn.MaxPool2d(kernel_size=2, stride=2, padding=0, dilation=1, ceil_mode=False),
+    nn.Conv2d(128, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)),
+    nn.ReLU(inplace=True),
+    nn.Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)),
+    nn.ReLU(inplace=True),
+    nn.Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)),
+    nn.ReLU(inplace=True),
+    nn.MaxPool2d(kernel_size=2, stride=2, padding=0, dilation=1, ceil_mode=False),
+    nn.Conv2d(256, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)),
+    nn.ReLU(inplace=True),
+    nn.Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)),
+    nn.ReLU(inplace=True),
+    nn.Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)),
+    nn.ReLU(inplace=True),
+    nn.MaxPool2d(kernel_size=2, stride=2, padding=0, dilation=1, ceil_mode=False),
+    nn.Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)),
+    nn.ReLU(inplace=True),
+    nn.Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)),
+    nn.ReLU(inplace=True),
+    nn.Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)),
+    nn.ReLU(inplace=True),
+    nn.MaxPool2d(kernel_size=2, stride=2, padding=0, dilation=1, ceil_mode=False))
+model.classifier = nn.Sequential(nn.Linear(25088, 4096, bias=True),
                          nn.ReLU(inplace=True),
                          nn.Dropout(p=0.5, inplace=False),
                          nn.Linear(4096,4096, bias=True),
@@ -154,8 +186,8 @@ if osp.exists(args.save):
 
 #optimizer = optim.Adam(model.parameters())
 optimizer = optim.Adam(model.parameters(), lr= 3e-4, betas=(0.9, 0.99), weight_decay=0.0002)
-#steps = 10
-#scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, steps)
+steps = 10
+scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, steps)
 criterion= nn.NLLLoss()
 
 def Train(epoch):
@@ -172,7 +204,7 @@ def Train(epoch):
         loss = criterion(output, target)
         loss.backward()
         optimizer.step()
-        #scheduler.step()
+        scheduler.step()
 
         # train_loss += loss.item() * data.size(0)
 
